@@ -1,0 +1,6 @@
+<div class="video-controls">
+    <button *ngIf="!videoPlaying" type="button" class="play-pause" (click)="play($event)">Play</button>
+    <button *ngIf="videoPlaying" type="button" class="play-pause" (click)="pause($event)">Pause</button>
+    <input [value]="seekValue" #seekBar type="range" class="seek-bar" min="0" max="1" step="0.01"
+        (pointerdown)="seekStarted($event);" (change)="seekEnded($event);">
+</div>

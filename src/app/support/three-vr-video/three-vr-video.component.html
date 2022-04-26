@@ -1,0 +1,3 @@
+<video [muted]="true" id="video" #video loop muted crossOrigin="anonymous" playsinline style="display:none">
+    <source *ngFor="let url of videoUrls" [src]="url">
+</video>

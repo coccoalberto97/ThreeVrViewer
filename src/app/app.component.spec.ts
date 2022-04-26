@@ -11,6 +11,7 @@ describe('AppComponent', () => {
       declarations: [
         AppComponent
       ],
+      teardown: { destroyAfterEach: false } // true by default after Angular 13
     }).compileComponents();
   });
 
@@ -24,12 +25,5 @@ describe('AppComponent', () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
     expect(app.title).toEqual('three-vr-viewer');
-  });
-
-  it('should render title', () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    fixture.detectChanges();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('.content span')?.textContent).toContain('three-vr-viewer app is running!');
   });
 });

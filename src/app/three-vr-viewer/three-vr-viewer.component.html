@@ -1,0 +1,10 @@
+<div id="canvas-wrapper" #canvasWrapper class="canvas-wrapper" (window:resize)="draw()">
+    <canvas id="canvas" #canvas id="canvas"></canvas>
+    <three-vr-video #video
+        [videoUrls]="['https://bitmovin-a.akamaihd.net/content/playhouse-vr/progressive.mp4']">
+    </three-vr-video>
+    <debug-video-controls (onSeek)="video.setPlaybackPercentage($event)" (onPause)="video.pause()"
+        (onPlay)="video.play()" [seekValue]="vrVideoComponent.getCurrentTime() / vrVideoComponent.getDuration()"
+        [videoPlaying]="vrVideoComponent.playing" id="debug-video-controls">
+    </debug-video-controls>
+</div>
