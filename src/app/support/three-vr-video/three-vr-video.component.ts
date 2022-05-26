@@ -9,7 +9,7 @@ export class ThreeVrVideoComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('video', { static: true })
   private videoRef_!: ElementRef;
 
-  @Input() public videoUrls!: Array<string>;
+  @Input() public videoUrls!: string[];
 
   public get video(): HTMLVideoElement {
     return this.videoRef_.nativeElement;

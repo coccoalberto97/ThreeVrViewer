@@ -1,10 +1,13 @@
-import { AfterViewInit, Component, ElementRef, HostListener, Input, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, HostListener, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import bind from 'bind-decorator';
+import { lastValueFrom, Subject } from 'rxjs';
 import { OrbitControls } from 'src/utils/orbit-controls';
+import { Project } from 'src/utils/project';
 import { Stack } from 'src/utils/stack';
 import { IVrViewerEvent, IVrViewerPlacedObject, VRViewerAction, VrViewerActionType, VrViewerEvent, VrViewerEventType } from 'src/utils/vr-viewer-event';
 import { Color, Mesh, MeshBasicMaterial, MOUSE, Object3D, PerspectiveCamera, Raycaster, Scene, SphereGeometry, Vector2, Vector3, VideoTexture, WebGLRenderer } from 'three';
 import { Block, Text, update } from 'three-mesh-ui';
+import { ProjectService } from '../services/project/project.service';
 import { ThreeVrVideoComponent } from '../support/three-vr-video/three-vr-video.component';
 
 @Component({
@@ -12,7 +15,7 @@ import { ThreeVrVideoComponent } from '../support/three-vr-video/three-vr-video.
   templateUrl: './three-vr-viewer.component.html',
   styleUrls: ['./three-vr-viewer.component.scss']
 })
-export class ThreeVrViewerComponent implements OnInit, AfterViewInit {
+export class ThreeVrViewerComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('canvas')
   private canvasRef!: ElementRef;
 
@@ -45,197 +48,30 @@ export class ThreeVrViewerComponent implements OnInit, AfterViewInit {
   //se il tempo del video torna indietro bisogna pushare nuvoamente nella lista di quelle da eseguire
   private toViewElements: Stack<IVrViewerEvent> = new Stack<VrViewerEvent>();
   private viewedElements: Stack<IVrViewerEvent> = new Stack<VrViewerEvent>();
-  private interactableObjects: Array<Object3D> = [];
+  private interactableObjects: Object3D[] = [];
 
   //map containing all assets
-  private project = {
-    events: [
-      {
-        eventTime: 100, eventType: VrViewerEventType.TIME_EVENT, actions: [
-          new VRViewerAction(0, VrViewerActionType.REMOVE_TEXT, { id: 4 })
-        ]
-      },
-      {
-        eventTime: 90, eventType: VrViewerEventType.TIME_EVENT, actions: [
-          new VRViewerAction(1, VrViewerActionType.REMOVE_TEXT, { id: 3 })
-        ]
-      },
-      {
-        eventTime: 80, eventType: VrViewerEventType.TIME_EVENT, actions: [
-          new VRViewerAction(1, VrViewerActionType.REMOVE_TEXT, { id: 2 })
-        ]
-      },
-      {
-        eventTime: 70, eventType: VrViewerEventType.TIME_EVENT, actions: [
-          new VRViewerAction(1, VrViewerActionType.REMOVE_TEXT, { id: 1 })
-        ]
-      },
-      {
-        eventTime: 60, eventType: VrViewerEventType.TIME_EVENT, actions: [
-          new VRViewerAction(1, VrViewerActionType.REMOVE_TEXT, { id: 0 })
-        ]
-      },
-      {
-        eventTime: 40, eventType: VrViewerEventType.TIME_EVENT, actions: [
-          new VRViewerAction(1, VrViewerActionType.PLACE_TEXT, { id: 4 })
-        ]
-      },
-      {
-        eventTime: 30, eventType: VrViewerEventType.TIME_EVENT, actions: [
-          new VRViewerAction(1, VrViewerActionType.PLACE_TEXT, { id: 3 })
-        ]
-      },
-      {
-        eventTime: 20, eventType: VrViewerEventType.TIME_EVENT, actions: [
-          new VRViewerAction(1, VrViewerActionType.PLACE_TEXT, { id: 2 })
-        ]
-      },
-      {
-        eventTime: 10, eventType: VrViewerEventType.TIME_EVENT, actions: [
-          new VRViewerAction(1, VrViewerActionType.PLACE_TEXT, { id: 1 })
-        ]
-      },
-      {
-        eventTime: 0, eventType: VrViewerEventType.TIME_EVENT, actions: [
-          new VRViewerAction(1, VrViewerActionType.PLACE_TEXT, { id: 0 })
-        ]
-      },
+  private project?: Project;
+
+  private activeObjects: IVrViewerPlacedObject[] = [];
+
+  private componentDestroyed: Subject<boolean> = new Subject();
+  constructor(private projectService: ProjectService) { }
 
 
-
-    ],
-    objects: {
-      0: {
-        id: 0,
-        start: 0,
-        end: 70,
-        text: "lallo 0",
-        position: {
-          x: -81.76898440591981, y: 32.43497796255248, z: 45.42191008790865
-        },
-        forward: {
-          x: 0.5112543172401928, y: -0.1489415104252354, z: -0.8464250998024067
-        },
-      },
-      1: {
-        id: 1,
-        start: 10,
-        end: 80,
-        text: "lallo 1",
-        position: {
-          x: -81.49436462932209, y: 32.459769899035656, z: 45.89207944976438
-        },
-        forward: {
-          x: 0.7979064758198647, y: -0.14180831519662634, z: -0.5858631730923338
-        }
-      },
-      2: {
-        id: 2,
-        start: 20,
-        end: 90,
-        text: "lallo 2",
-        position: {
-          x: -81.37121771176167, y: 32.409543018035436, z: 46.14532554274652
-        },
-        forward: {
-          x: 0.9206372814263909, y: -0.19137753658826726, z: -0.34029639218955976
-        }
-      },
-      3: {
-        id: 3,
-        start: 30,
-        end: 100,
-        text: "lallo 3",
-        position: {
-          x: -97.82089936472289, y: 14.528765938748238, z: 4.606680859803569
-        },
-        forward: {
-          x: 0.9435684883285299, y: 0.14060411889081625, z: 0.29984827760777694
-        }
-      },
-      4: {
-        id: 4,
-        start: 40,
-        end: 110,
-        text: "lallo 4",
-        position: {
-          x: -48.69667571463721, y: 19.168858312545538, z: -84.04135371622434
-        },
-        forward: {
-          x: -0.08659551256653876, y: 0.19806983471034031, z: 0.9763552415904556
-        }
-      },
-      5: {
-        id: 5,
-        start: 50,
-        end: 120,
-        text: "lallo 5",
-        position: {
-          x: 92.79439750146376, y: 16.13561985451155, z: 30.494628820781646
-        },
-        forward: {
-          x: -0.8672143236533185, y: 0.02980699970046286, z: -0.49704211050913377
-        }
-      },
-      6: {
-        id: 6,
-        start: 60,
-        end: 130,
-        text: "lallo 6",
-        position: {
-          x: 92.82596380195552, y: 15.923015521336636, z: 30.51159912990048
-        },
-        forward: {
-          x: -0.7473567672310024, y: -0.18409831002877394, z: -0.6384087050773782
-        }
-      },
-      7: {
-        id: 7,
-        start: 70,
-        end: 140,
-        text: "lallo 7",
-        position: {
-          x: 92.85212833337951, y: 16.272244507273776, z: 30.25274431899848
-        },
-        forward: {
-          x: -0.6274390430099663, y: 0.12156243900990847, z: -0.7691182098537909
-        }
-      },
-      8: {
-        id: 8,
-        start: 80,
-        end: 150,
-        text: "lallo 8",
-        position: {
-          x: 62.213661628113854, y: 10.57167515419713, z: 76.28098351810549
-        },
-        forward: {
-          x: -0.38287631920562226, y: -0.06622467100920251, z: -0.9214228221296006
-        }
-      },
-      9: {
-        id: 9,
-        start: 90,
-        end: 160,
-        text: "lallo 9",
-        position: {
-          x: 62.094877030635935, y: 10.391792513228923, z: 76.40444861492817
-        },
-        forward: {
-          x: -0.10654830389734493, y: -0.10184384323523697, z: -0.9890780002263097
-        }
-      }
-    }
+  ngOnDestroy(): void {
+    //unsub from all rxjs active events
+    this.componentDestroyed.next(true);
+    this.componentDestroyed.complete();
   }
 
-  private activeObjects: Array<IVrViewerPlacedObject> = [];
-  constructor() { }
-
   ngOnInit(): void {
-    let events = this.project.events;
+    this.getEvents();
+  }
 
-
-    for (let event of events) {
+  private async getEvents() {
+    this.project = await lastValueFrom(this.projectService.getProject(1));
+    for (let event of this.project.events) {
       this.toViewElements.push(event);
     }
   }
@@ -272,7 +108,11 @@ export class ThreeVrViewerComponent implements OnInit, AfterViewInit {
       sphere.position.copy(spawnPosition);
       sphere.position.add(forward.clone().multiplyScalar(490));
       this.scene.add(sphere);*/
-      this.addText(spawnPosition, forward, 490, "lallo");
+      this.addText(spawnPosition, forward, 490, `
+      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer in lectus placerat, rhoncus lacus at, convallis ante. Sed a maximus diam. Quisque sit amet pulvinar ante. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Integer lectus eros, congue at euismod vel, dapibus eu orci. Proin non sapien est. Suspendisse ac rutrum libero. Suspendisse consectetur nibh augue, non fermentum massa imperdiet a. Nulla et felis eget augue vehicula consectetur nec nec libero. Nam eu tellus et nunc faucibus ornare. In hendrerit fringilla dolor, in blandit sem aliquet sit amet. Phasellus posuere accumsan massa eu tempus. Curabitur at metus nec mi lobortis euismod et in nulla.
+      Quisque ultrices leo est, et consequat massa elementum vel. Nam luctus risus luctus, aliquet ipsum a, fermentum odio. Ut mollis tincidunt quam, eu mollis leo vulputate id. Suspendisse mi urna, bibendum sed justo id, bibendum efficitur ipsum. Pellentesque nec sapien hendrerit, pretium elit eu, eleifend magna. Sed dignissim, justo eu ultricies porttitor, dolor felis congue tellus, quis finibus velit enim non justo. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Ut ac blandit nulla, vitae ornare massa. Aliquam ultrices nibh ac erat laoreet, vel elementum urna congue. Duis non sem a sapien vulputate facilisis. Aenean pulvinar, ligula eget consectetur aliquet, nulla urna posuere dolor, fringilla scelerisque purus sem eu tortor. Suspendisse vehicula ligula ac purus vehicula, vel tempus orci rutrum.
+      Donec sit amet nisi ut risus consequat tristique sit amet sit amet est. Vestibulum eget turpis justo. Vestibulum sit amet nunc egestas, porttitor enim quis, porta lacus. Donec dapibus enim ullamcorper enim interdum varius. Donec vel ullamcorper purus, ac sollicitudin arcu. Morbi augue eros, lobortis eu odio ac, ornare porta ante. Donec condimentum, arcu a laoreet imperdiet, tellus velit bibendum sem, et pharetra lectus velit a turpis. Phasellus ac porta felis, semper maximus felis. Duis lacinia arcu quis dui bibendum tempus. Praesent nulla sem, facilisis id nisl id, placerat consequat tellus. Ut efficitur augue posuere massa iaculis molestie. Morbi tempus eleifend massa, eget consectetur magna pharetra eu. Phasellus ullamcorper massa sit amet dui euismod, non consequat lorem gravida. Nulla id vestibulum leo.
+      `);
       let obj = localStorage.getItem("SAVED_OBJECTS") ? JSON.parse(localStorage.getItem("SAVED_OBJECTS")!) : [];
       obj.push({ position: spawnPosition, forward: forward });
       localStorage.setItem("SAVED_OBJECTS", JSON.stringify(obj));
@@ -376,7 +216,7 @@ export class ThreeVrViewerComponent implements OnInit, AfterViewInit {
               switch (action.actionType) {
                 case VrViewerActionType.PLACE_TEXT:
                   let id = action.payload.id as number;
-                  let obj = (this.project.objects as any)[id];
+                  let obj = (this.project!.objects as any)[id];
                   if (obj) {
                     let position = new Vector3(obj.position.x, obj.position.y, obj.position.z);
                     let forward = new Vector3(obj.forward.x, obj.forward.y, obj.forward.z);
@@ -411,7 +251,38 @@ export class ThreeVrViewerComponent implements OnInit, AfterViewInit {
       //the video has moved back
       let top = this.viewedElements.top;
       while (top && top.value && top.value.eventTime >= currentTime) {
-        //console.log(top.value.payload);
+        switch (top.value.eventType) {
+          case VrViewerEventType.TIME_EVENT:
+            for (let action of top.value.actions) {
+              switch (action.actionType) {
+                case VrViewerActionType.REMOVE_TEXT:
+                  let id = action.payload.id as number;
+                  let obj = (this.project!.objects as any)[id];
+                  if (obj && obj.start < currentTime) {
+                    if (obj) {
+                      let position = new Vector3(obj.position.x, obj.position.y, obj.position.z);
+                      let forward = new Vector3(obj.forward.x, obj.forward.y, obj.forward.z);
+                      let place_text_object = this.addText(position, forward, 490, obj.text);
+                      this.activeObjects.push({ id: obj.id, action: action, object: place_text_object, start: obj.start, end: obj.end });
+                    }
+                  }
+                  break;
+                default:
+                  break;
+              }
+            }
+
+            break;
+          default:
+            break;
+        }
+
+
+
+
+
+
+
         //put the viewed element on top of the viewed stack
         this.toViewElements.push(top.value);
         this.viewedElements.pop();
@@ -449,28 +320,52 @@ export class ThreeVrViewerComponent implements OnInit, AfterViewInit {
    * @param textContent 
    */
   private addText(position: Vector3, forward: Vector3, distance: number, textContent: string, lookAt?: Vector3): Object3D {
-    const container = new Block({
-      width: 100,
-      height: 100,
-      padding: 1,
+    //for debug need to improve the way I calculate the size of the box
+    let spaces = textContent.length;
+    let height = 1.5 + 1.5 * spaces / 800;
+    let width = 1.2 + 1.2 * spaces / 800;
+
+    /*
+    const outerContainer = new Block({
+      width: width,
+      height: height,
       backgroundColor: new Color(0xffffff),
-      backgroundOpacity: 0.5,
+      backgroundOpacity: 0.1,
+      fontSupersampling: true,
+      justifyContent: 'center',
+      textAlign: 'center',
       bestFit: "auto",
       fontFamily: './assets/Roboto-msdf.json',
       fontTexture: './assets/Roboto-msdf.png',
+    });*/
 
+    const container = new Block({
+      borderWidth: 0,
+      borderRadius: 0.45,
+      //borderColor: new Color(0.5 + 0.5 * Math.sin(Date.now() / 500), 0.5, 1),
+      width: width - 0.2,
+      height: height - 0.2,
+      backgroundColor: new Color(0xffffff),
+      backgroundOpacity: 0.2,
+      fontSupersampling: true,
+      justifyContent: 'center',
+      textAlign: 'center',
+      fontFamily: './assets/Roboto-msdf.json',
+      fontTexture: './assets/Roboto-msdf.png',
     });
+
 
     const textObject = new Text({
       content: textContent,
       fontColor: new Color(0x000000),
-      fontSize: 10,
-
+      fontSize: 0.1,
     });
+    //outerContainer.add(container);
     container.add(textObject);
     container.position.copy(position);
     container.position.add(forward.clone().multiplyScalar(distance));
     container.lookAt(lookAt ?? this.camera.position);
+    container.scale.set(100, 100, 100);
     // scene is a THREE.Scene (see three.js)
     this.scene.add(container);
     return container;
