@@ -2,9 +2,9 @@ import { AfterViewInit, Component, ElementRef, HostListener, Input, OnDestroy, O
 import bind from 'bind-decorator';
 import { lastValueFrom, Subject } from 'rxjs';
 import { OrbitControls } from 'src/utils/orbit-controls';
-import { Project } from 'src/utils/project';
+import { Project } from 'src/app/models/project';
 import { Stack } from 'src/utils/stack';
-import { IVrViewerEvent, IVrViewerPlacedObject, VRViewerAction, VrViewerActionType, VrViewerEvent, VrViewerEventType } from 'src/utils/vr-viewer-event';
+import { IVrViewerEvent, IVrViewerPlacedObject, VRViewerAction, VrViewerActionType, VrViewerEvent, VrViewerEventType } from 'src/app/models/vr-viewer-event';
 import { Color, Mesh, MeshBasicMaterial, MOUSE, Object3D, PerspectiveCamera, Raycaster, Scene, SphereGeometry, Vector2, Vector3, VideoTexture, WebGLRenderer } from 'three';
 import { Block, Text, update } from 'three-mesh-ui';
 import { ProjectService } from '../services/project/project.service';
@@ -231,6 +231,11 @@ export class ThreeVrViewerComponent implements OnInit, AfterViewInit, OnDestroy 
                     this.activeObjects = this.activeObjects.filter((obj) => obj.id != action.payload.id);
                   }
                   break;
+                  case VrViewerActionType.SEEK:
+                    if(Math.floor(currentTime/10) * 10 == top.value.eventTime){
+                      this.vrVideoComponent.setPlaybackSeconds(action.payload.seetkTo ?? 0);
+                    }
+                    break;
                 default:
                   break;
               }
@@ -277,12 +282,6 @@ export class ThreeVrViewerComponent implements OnInit, AfterViewInit, OnDestroy 
             break;
         }
 
-
-
-
-
-
-
         //put the viewed element on top of the viewed stack
         this.toViewElements.push(top.value);
         this.viewedElements.pop();
@@ -321,9 +320,14 @@ export class ThreeVrViewerComponent implements OnInit, AfterViewInit, OnDestroy 
    */
   private addText(position: Vector3, forward: Vector3, distance: number, textContent: string, lookAt?: Vector3): Object3D {
     //for debug need to improve the way I calculate the size of the box
-    let spaces = textContent.length;
-    let height = 1.5 + 1.5 * spaces / 800;
-    let width = 1.2 + 1.2 * spaces / 800;
+    //#11 Fix tmp algo scale text box
+    let chars = textContent.length;
+    let adjFactor = chars / 900;
+    let height = 0.5 + 1.6 * adjFactor;
+    let width = 1 + 1 * adjFactor;
+
+    let adjDistance = distance - (distance * adjFactor * 2) / 100;
+    let adjRadius = 0.1 + 0.2 * (height / 100 * adjFactor);
 
     /*
     const outerContainer = new Block({
@@ -341,7 +345,7 @@ export class ThreeVrViewerComponent implements OnInit, AfterViewInit, OnDestroy 
 
     const container = new Block({
       borderWidth: 0,
-      borderRadius: 0.45,
+      borderRadius: adjRadius,
       //borderColor: new Color(0.5 + 0.5 * Math.sin(Date.now() / 500), 0.5, 1),
       width: width - 0.2,
       height: height - 0.2,
@@ -363,7 +367,7 @@ export class ThreeVrViewerComponent implements OnInit, AfterViewInit, OnDestroy 
     //outerContainer.add(container);
     container.add(textObject);
     container.position.copy(position);
-    container.position.add(forward.clone().multiplyScalar(distance));
+    container.position.add(forward.clone().multiplyScalar(adjDistance));
     container.lookAt(lookAt ?? this.camera.position);
     container.scale.set(100, 100, 100);
     // scene is a THREE.Scene (see three.js)

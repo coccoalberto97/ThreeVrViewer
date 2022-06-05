@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { of } from 'rxjs';
-import { VRViewerAction, VrViewerActionType, VrViewerEventType } from 'src/utils/vr-viewer-event';
+import { VRViewerAction, VrViewerActionType, VrViewerEventType } from 'src/app/models/vr-viewer-event';
 
 @Injectable({
   providedIn: 'root'
@@ -20,10 +20,15 @@ export class ProjectService {
 
 
   /**
- * Mocked for dev
- */
+   * Mocked for dev
+   */
   private $project = {
     events: [
+      {
+        eventTime: 100, eventType: VrViewerEventType.TIME_EVENT, actions: [
+          new VRViewerAction(0, VrViewerActionType.SEEK, { seetkTo: 10 })
+        ]
+      },
       {
         eventTime: 100, eventType: VrViewerEventType.TIME_EVENT, actions: [
           new VRViewerAction(0, VrViewerActionType.REMOVE_TEXT, { id: 4 })
@@ -81,7 +86,7 @@ export class ProjectService {
         id: 0,
         start: 0,
         end: 70,
-        text: "lallo lallo 0",
+        text: "person 0",
         position: {
           x: -81.76898440591981, y: 32.43497796255248, z: 45.42191008790865
         },
@@ -93,7 +98,7 @@ export class ProjectService {
         id: 1,
         start: 10,
         end: 80,
-        text: "lallo 1",
+        text: "person 1",
         position: {
           x: -81.49436462932209, y: 32.459769899035656, z: 45.89207944976438
         },
@@ -105,7 +110,7 @@ export class ProjectService {
         id: 2,
         start: 20,
         end: 90,
-        text: "lallo 2",
+        text: "person 2",
         position: {
           x: -81.37121771176167, y: 32.409543018035436, z: 46.14532554274652
         },
@@ -117,7 +122,7 @@ export class ProjectService {
         id: 3,
         start: 30,
         end: 100,
-        text: "lallo 3",
+        text: "person 3",
         position: {
           x: -97.82089936472289, y: 14.528765938748238, z: 4.606680859803569
         },
@@ -129,7 +134,7 @@ export class ProjectService {
         id: 4,
         start: 40,
         end: 110,
-        text: "lallo 4",
+        text: "person 4",
         position: {
           x: -48.69667571463721, y: 19.168858312545538, z: -84.04135371622434
         },
@@ -141,7 +146,7 @@ export class ProjectService {
         id: 5,
         start: 50,
         end: 120,
-        text: "lallo 5",
+        text: "person 5",
         position: {
           x: 92.79439750146376, y: 16.13561985451155, z: 30.494628820781646
         },
@@ -153,7 +158,7 @@ export class ProjectService {
         id: 6,
         start: 60,
         end: 130,
-        text: "lallo 6",
+        text: "person 6",
         position: {
           x: 92.82596380195552, y: 15.923015521336636, z: 30.51159912990048
         },
@@ -165,7 +170,7 @@ export class ProjectService {
         id: 7,
         start: 70,
         end: 140,
-        text: "lallo 7",
+        text: "person 7",
         position: {
           x: 92.85212833337951, y: 16.272244507273776, z: 30.25274431899848
         },
@@ -177,7 +182,7 @@ export class ProjectService {
         id: 8,
         start: 80,
         end: 150,
-        text: "lallo 8",
+        text: "person 8",
         position: {
           x: 62.213661628113854, y: 10.57167515419713, z: 76.28098351810549
         },
@@ -189,7 +194,7 @@ export class ProjectService {
         id: 9,
         start: 90,
         end: 160,
-        text: "lallo 9",
+        text: "person 9",
         position: {
           x: 62.094877030635935, y: 10.391792513228923, z: 76.40444861492817
         },
